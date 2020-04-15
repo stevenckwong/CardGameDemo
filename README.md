@@ -6,3 +6,5 @@ It uses 2 external services
 2. gameCommCalc to get a commission for the play.
 
 The 2 other services are written in Go and I have included them under the "external-services" folder.
+
+This application also uses a MongoDB database to store the users.
