@@ -90,37 +90,41 @@ public class ThreeCardServlet extends HttpServlet {
 				int betPool = currGame.getBetPool();
 				User currUser = (User)session.getAttribute("signedInUser");
 				if (currGame.getWinner().contentEquals(ThreeCardGame.DEALER)) {
+					NewRelic.addCustomParameter("dealerwins", 1);
 					currUser.subtractFromAccount(betPool);
 				} else if (currGame.getWinner().contentEquals(ThreeCardGame.DRAW)) {
+					NewRelic.addCustomParameter("draws", 1);
 					currUser.addToAccount(0);
 				} else {
+					NewRelic.addCustomParameter("playerwins", 1);
 					currUser.addToAccount(betPool);
 				}
 				NewRelic.addCustomParameter("user", currUser.getEmail());
-				Segment segment = NewRelic.getAgent().getTransaction().startSegment("/BetAndDrawCard/Segment/LookupGameCommCalcService");
+				// Segment segment = NewRelic.getAgent().getTransaction().startSegment("LookupGameCommCalcService");
 				// Get commission from external service
 				String commServiceURL = this.getCommissionServiceURL();
-				segment.end();
+				// segment.end();
 				
-				segment = NewRelic.getAgent().getTransaction().startSegment("/BetAndDrawCard/Segment/GetCommissionFromService");
+				// segment = NewRelic.getAgent().getTransaction().startSegment("/BetAndDrawCard/Segment/GetCommissionFromService");
 				int comm = this.getCommission(commServiceURL, betPool);
-				segment.end();
+				// segment.end();
 				
 				NewRelic.addCustomParameter("commission", comm);
+				
 								
 				currGame.setCommissionCharged(comm);
 				// currUser.subtractFromAccount(comm);
 								
-				segment = NewRelic.getAgent().getTransaction().startSegment("/BetAndDrawCard/Segment/UpdateUserInDB");
+				// segment = NewRelic.getAgent().getTransaction().startSegment("/BetAndDrawCard/Segment/UpdateUserInDB");
 				// Update user in DB
 				DBService db = new DBService();
 				db.saveUser(currUser);
-				segment.end();
+				// segment.end();
 				
-				segment = NewRelic.getAgent().getTransaction().startSegment("/BetAndDrawCard/Segment/LogGameInDB");
+				// segment = NewRelic.getAgent().getTransaction().startSegment("/BetAndDrawCard/Segment/LogGameInDB");
 				// log game in DB
 				db.logGame(currGame);
-				segment.end();
+				// segment.end();
 				session.setAttribute("signedInUser", currUser);
 			}
 			session.setAttribute("ThreeCardGame", currGame);
@@ -143,10 +147,10 @@ public class ThreeCardServlet extends HttpServlet {
 		
 		if (url.length()==0 || url==null) {
 			// default to service running on localhost
-			url = "http://localhost:8888/lookup?gameCommCalc";
+			url = "http://127.0.0.1:8888/lookup?gameCommCalc";
 		}
 				
-		Segment segment = NewRelic.getAgent().getTransaction().startSegment("/BetAndDrawCard/Segment/External/LookupCommServiceURL");
+		// Segment segment = NewRelic.getAgent().getTransaction().startSegment("/BetAndDrawCard/Segment/External/LookupCommServiceURL");
 		
 		URL obj = new URL(url);
 		
@@ -180,7 +184,7 @@ public class ThreeCardServlet extends HttpServlet {
 			response.append(inputLine);
 		}
 		in.close();
-		segment.end();
+		// segment.end();
 		
 		//print result
 		String commServiceURL = response.toString();
@@ -204,7 +208,7 @@ public class ThreeCardServlet extends HttpServlet {
 		//String url = "http://localhost:9090?"+winnings;
 		String url = commServiceURL+"?"+winnings;
 		
-		Segment segment = NewRelic.getAgent().getTransaction().startSegment("/BetAndDrawCard/Segment/External/GetCommAmtFromCommService");
+		// Segment segment = NewRelic.getAgent().getTransaction().startSegment("/BetAndDrawCard/Segment/External/GetCommAmtFromCommService");
 		
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -238,7 +242,7 @@ public class ThreeCardServlet extends HttpServlet {
 		}
 		in.close();
 		
-		segment.end();
+		// segment.end();
 
 		//print result
 		comm = Integer.parseInt(response.toString());
